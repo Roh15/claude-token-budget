@@ -35,9 +35,7 @@ Token counts and quota estimates are derived from Claude Code's local JSONL sess
 ## Install
 
 ```bash
-git clone https://github.com/Roh15/claude-token-budget.git
-cd claude-token-budget
-node install.js
+npx github:Roh15/claude-token-budget
 ```
 
 Then restart Claude Code (or open `/hooks` once to reload config).
@@ -45,7 +43,7 @@ Then restart Claude Code (or open `/hooks` once to reload config).
 ## Uninstall
 
 ```bash
-node uninstall.js
+npx github:Roh15/claude-token-budget-uninstall
 ```
 
 ## Usage

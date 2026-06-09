@@ -8,6 +8,10 @@
     "uninstall-hooks": "node uninstall.js",
     "test": "node --test test.js"
   },
+  "bin": {
+    "claude-token-budget": "./install.js",
+    "claude-token-budget-uninstall": "./uninstall.js"
+  },
   "engines": {
     "node": ">=18"
   },
