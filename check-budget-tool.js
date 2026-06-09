@@ -7,32 +7,10 @@
  */
 
 const fs   = require('fs');
-const os   = require('os');
 const path = require('path');
+const { fmt, countSessionFile } = require('./lib');
 
-const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
 const CACHE_PATH = path.join(__dirname, '.budget-cache.json');
-
-function fmt(n) {
-  return n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'k' : String(n);
-}
-
-function countSessionTokens(sinceMs, sessionFile) {
-  if (!sessionFile) return 0;
-  let total = 0;
-  try {
-    for (const line of fs.readFileSync(sessionFile, 'utf8').split('\n')) {
-      if (!line.trim()) continue;
-      let e; try { e = JSON.parse(line); } catch { continue; }
-      if (e.type !== 'assistant' || !e.message?.usage || !e.timestamp) continue;
-      if (e.timestamp < sinceMs) continue;
-      const u = e.message.usage;
-      total += (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0)
-             + (u.cache_creation_input_tokens ?? 0) + (u.output_tokens ?? 0);
-    }
-  } catch {}
-  return total;
-}
 
 function isBudgetRecoveryCommand(toolName, toolInput) {
   if (toolName !== 'Bash') return false;
@@ -41,7 +19,6 @@ function isBudgetRecoveryCommand(toolName, toolInput) {
 }
 
 function main(sessionFile, toolName, toolInput) {
-  // No cache = UserPromptSubmit hasn't run yet; let tool proceed
   let cache;
   try { cache = JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8')); }
   catch { process.exit(0); }
@@ -49,7 +26,7 @@ function main(sessionFile, toolName, toolInput) {
   const { sessionCap, fhStartMs } = cache;
   if (!sessionCap || !fhStartMs) process.exit(0);
 
-  const sessionTokens = countSessionTokens(fhStartMs, sessionFile);
+  const sessionTokens = countSessionFile(fhStartMs, sessionFile);
   const sPct = sessionCap > 0 ? Math.round(sessionTokens / sessionCap * 100) : 0;
 
   if (sPct < 95 || isBudgetRecoveryCommand(toolName, toolInput)) process.exit(0);

@@ -23,6 +23,10 @@ Two hooks fire automatically:
 
 The session cap is derived from your budget % and live quota data — no stored quota, no calibration step. Quota is estimated from `local tokens / utilization%` on every turn.
 
+## Caveats
+
+Token counts and quota estimates are derived from Claude Code's local JSONL session logs and the output of `claude /usage`. Both are internal formats — if Anthropic changes them, the hook will log a warning to stderr and fail open (no tool blocking). Check for stderr output in your hook logs if budget warnings stop appearing.
+
 ## Requirements
 
 - [Claude Code](https://claude.ai/code) CLI installed and in PATH

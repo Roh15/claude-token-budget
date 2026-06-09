@@ -7,82 +7,15 @@
  */
 
 const fs   = require('fs');
-const os   = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
+const { fmt, parseUsage, parseResetMs, countTokensSince, loadPrefs } = require('./lib');
 
-const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
 const PREFS_PATH = path.join(__dirname, 'budget-prefs.json');
-
-function loadPrefs() {
-  try { return JSON.parse(fs.readFileSync(PREFS_PATH, 'utf8')); } catch { return {}; }
-}
 
 function savePrefs(prefs) {
   fs.writeFileSync(PREFS_PATH, JSON.stringify(prefs, null, 2));
   fs.chmodSync(PREFS_PATH, 0o600);
-}
-
-function fmt(n) {
-  return n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'k' : String(n);
-}
-
-function findJsonl(dir) {
-  const out = [];
-  try {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      const p = path.join(dir, e.name);
-      if (e.isDirectory()) out.push(...findJsonl(p));
-      else if (e.name.endsWith('.jsonl')) out.push(p);
-    }
-  } catch {}
-  return out;
-}
-
-function countTokensSince(sinceMs) {
-  let total = 0;
-  for (const file of findJsonl(path.join(CLAUDE_DIR, 'projects'))) {
-    try {
-      if (fs.statSync(file).mtimeMs < sinceMs) continue;
-      for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
-        if (!line.trim()) continue;
-        let e; try { e = JSON.parse(line); } catch { continue; }
-        if (e.type !== 'assistant' || !e.message?.usage || !e.timestamp) continue;
-        if (e.timestamp < sinceMs) continue;
-        const u = e.message.usage;
-        total += (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0)
-               + (u.cache_creation_input_tokens ?? 0) + (u.output_tokens ?? 0);
-      }
-    } catch {}
-  }
-  return total;
-}
-
-function parseUsage(text) {
-  const s = text.match(/Current session:\s*(\d+)%\s*used\s*·\s*resets\s*(.+)/i);
-  const w = text.match(/Current week[^:]*:\s*(\d+)%\s*used\s*·\s*resets\s*(.+)/i);
-  if (!s || !w) return null;
-  return {
-    five_hour: { pct: parseInt(s[1]), resetsStr: s[2].trim() },
-    seven_day: { pct: parseInt(w[1]), resetsStr: w[2].trim() },
-  };
-}
-
-function parseResetMs(str) {
-  const m = str.match(/(\w+)\s+(\d+)\s+at\s+(\d+)(?::(\d+))?(am|pm)\s+\(([^)]+)\)/i);
-  if (!m) return null;
-  const [, mon, day, hr, min = '0', ampm, tz] = m;
-  let h = parseInt(hr) % 12;
-  if (ampm.toLowerCase() === 'pm') h += 12;
-  const year  = new Date().getFullYear();
-  const month = new Date(`${mon} 1`).getMonth();
-  const approx = new Date(year, month, parseInt(day), h, parseInt(min));
-  const tzName = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'longOffset' })
-    .formatToParts(approx).find(p => p.type === 'timeZoneName')?.value ?? 'GMT+0';
-  const om = tzName.match(/GMT([+-])(\d+)(?::(\d+))?/);
-  const offsetMs = om ? (om[1] === '+' ? 1 : -1) * (parseInt(om[2]) * 60 + parseInt(om[3] ?? 0)) * 60000 : 0;
-  const utcMs = Date.UTC(year, month, parseInt(day), h, parseInt(min)) - offsetMs;
-  return utcMs < Date.now() - 60000 ? utcMs + 365 * 86400000 : utcMs;
 }
 
 function timeUntil(ms) {
@@ -92,10 +25,8 @@ function timeUntil(ms) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-// ── Commands ──────────────────────────────────────────────────────────────────
-
 function status() {
-  const prefs = loadPrefs();
+  const prefs = loadPrefs(PREFS_PATH);
   const fhBudgetPct = prefs.five_hour_budget_pct ?? 75;
   const sdBudgetPct = prefs.seven_day_budget_pct ?? 25;
 
@@ -144,7 +75,7 @@ function status() {
 }
 
 function set(args) {
-  const prefs = loadPrefs();
+  const prefs = loadPrefs(PREFS_PATH);
 
   let win = null, rawPct;
   if (args[0] === '5h') { win = '5h'; rawPct = args[1]; }
@@ -164,8 +95,6 @@ function set(args) {
   console.log(`Budget set: 5h ${fh}%  |  7d ${sd}%`);
   console.log('Run "status" to see current caps in tokens.');
 }
-
-// ── Dispatch ──────────────────────────────────────────────────────────────────
 
 const [,, cmd, ...rest] = process.argv;
 switch (cmd) {

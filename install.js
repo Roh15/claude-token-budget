@@ -17,7 +17,7 @@ const INSTALL_DIR   = path.join(os.homedir(), '.claude', 'token-budget');
 const COMMANDS_DIR  = path.join(os.homedir(), '.claude', 'commands');
 const SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
 
-const FILES = ['check-budget.js', 'check-budget-tool.js', 'budget-cli.js'];
+const FILES = ['check-budget.js', 'check-budget-tool.js', 'budget-cli.js', 'lib.js'];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

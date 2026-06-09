@@ -5,11 +5,17 @@
   "type": "commonjs",
   "scripts": {
     "install-hooks": "node install.js",
-    "uninstall-hooks": "node uninstall.js"
+    "uninstall-hooks": "node uninstall.js",
+    "test": "node --test test.js"
   },
   "engines": {
     "node": ">=18"
   },
   "keywords": ["claude", "claude-code", "token-budget", "hooks"],
-  "license": "MIT"
+  "author": "Roh15",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Roh15/claude-token-budget.git"
+  }
 }
