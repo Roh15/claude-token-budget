@@ -1,0 +1,15 @@
+{
+  "name": "claude-token-budget",
+  "version": "1.0.0",
+  "description": "Token budget monitor and loop guard for Claude Code",
+  "type": "commonjs",
+  "scripts": {
+    "install-hooks": "node install.js",
+    "uninstall-hooks": "node uninstall.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["claude", "claude-code", "token-budget", "hooks"],
+  "license": "MIT"
+}
