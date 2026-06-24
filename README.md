@@ -43,7 +43,7 @@ Then restart Claude Code (or open `/hooks` once to reload config).
 ## Uninstall
 
 ```bash
-npx github:Roh15/claude-token-budget-uninstall
+npx -p github:Roh15/claude-token-budget claude-token-budget-uninstall
 ```
 
 ## Usage
